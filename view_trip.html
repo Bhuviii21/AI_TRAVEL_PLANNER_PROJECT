@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+
+<head>
+<title>{{ t.view }} - AI Travel Planner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<!-- Leaflet CSS for OpenStreetMap -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .trip-view-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+
+    .trip-header {
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .trip-header h1 {
+        color: #2563EB;
+        font-size: 2.2rem;
+        margin: 0;
+    }
+
+    .trip-meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.5rem;
+    }
+
+    .trip-meta-item {
+        background: #f8fafc;
+        padding: 0.5rem 1.2rem;
+        border-radius: 50px;
+        font-size: 0.95rem;
+        color: #1a1a2e;
+    }
+
+    .trip-meta-item strong {
+        color: #2563EB;
+    }
+
+    .trip-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 0.95rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #2563EB, #38BDF8);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #1a1a2e;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+        transform: translateY(-2px);
+    }
+
+    .btn-danger {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+    }
+
+    .itinerary-content {
+        padding: 1.5rem 0;
+        line-height: 1.8;
+        color: #1a1a2e;
+    }
+
+    .itinerary-content h1, 
+    .itinerary-content h2, 
+    .itinerary-content h3 {
+        color: #2563EB;
+        margin-top: 1.5rem;
+    }
+
+    .itinerary-content ul, 
+    .itinerary-content ol {
+        padding-left: 1.5rem;
+    }
+
+    .itinerary-content li {
+        margin-bottom: 0.5rem;
+    }
+
+    .itinerary-content p {
+        margin-bottom: 1rem;
+    }
+
+    .itinerary-content blockquote {
+        border-left: 4px solid #2563EB;
+        padding-left: 1.5rem;
+        margin: 1rem 0;
+        color: #64748B;
+        font-style: italic;
+    }
+
+    .itinerary-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+    }
+
+    .itinerary-content th,
+    .itinerary-content td {
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem;
+        text-align: left;
+    }
+
+    .itinerary-content th {
+        background: #f8fafc;
+        font-weight: 600;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-top: 2rem;
+        padding: 12px 28px;
+        background: #f1f5f9;
+        color: #1a1a2e;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+
+    .back-link:hover {
+        background: #e2e8f0;
+        transform: translateY(-2px);
+    }
+
+    .budget-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .budget-low {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .budget-medium {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .budget-high {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .flash-messages {
+        max-width: 900px;
+        margin: 1rem auto 0;
+        padding: 0 1rem;
+    }
+
+    .flash-message {
+        padding: 12px 20px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        font-weight: 500;
+    }
+
+    .flash-message.success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #86efac;
+    }
+
+    .flash-message.error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+    }
+
+    /* Map styles */
+    #map {
+        height: 400px;
+        border-radius: 16px;
+        margin-top: 1rem;
+        border: 1px solid #e2e8f0;
+        width: 100%;
+        z-index: 1;
+    }
+
+    .map-container {
+        margin-top: 2rem;
+        border-top: 2px solid #f1f5f9;
+        padding-top: 2rem;
+    }
+
+    .map-container h3 {
+        color: #1a1a2e;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .map-link {
+        display: inline-block;
+        margin-bottom: 1rem;
+        padding: 8px 20px;
+        background: #2563EB;
+        color: white;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+
+    .map-link:hover {
+        background: #1D4ED8;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+    }
+
+    .no-map-message {
+        text-align: center;
+        padding: 2rem;
+        background: #f8fafc;
+        border-radius: 16px;
+        color: #64748B;
+    }
+
+    .no-map-message .icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .language-selector {
+        text-align: right;
+        margin-bottom: 1rem;
+    }
+
+    .lang-select {
+        padding: 6px 12px;
+        border-radius: 50px;
+        border: 2px solid #e2e8f0;
+        background: white;
+        font-size: 0.85rem;
+        cursor: pointer;
+        outline: none;
+        transition: 0.3s;
+    }
+
+    .lang-select:focus {
+        border-color: #2563EB;
+    }
+
+    @media (max-width: 768px) {
+        .trip-view-container {
+            padding: 1.5rem;
+            margin: 1rem;
+        }
+
+        .trip-header {
+            flex-direction: column;
+        }
+
+        .trip-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .trip-meta {
+            gap: 0.75rem;
+        }
+
+        .trip-meta-item {
+            font-size: 0.85rem;
+            padding: 0.4rem 1rem;
+        }
+
+        #map {
+            height: 300px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        #map {
+            height: 250px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages">
+        {% for category, message in messages %}
+            <div class="flash-message {{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endwith %}
+
+<div class="trip-view-container">
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <select onchange="window.location.href='/set_language/' + this.value" class="lang-select">
+            {% for code, name in languages.items() %}
+                <option value="{{ code }}" {% if lang == code %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Header -->
+    <div class="trip-header">
+        <div>
+            <h1>🗺️ {{ trip[1] }}</h1>
+            <div class="trip-meta">
+                <span class="trip-meta-item">📅 {{ trip[2] }} {{ t.days_short }}</span>
+                <span class="trip-meta-item">
+                    {% set budget_val = trip[3]|int %}
+                    <span class="budget-badge 
+                        {% if budget_val <= 2000 %}budget-low
+                        {% elif budget_val <= 5000 %}budget-medium
+                        {% else %}budget-high{% endif %}">
+                        💰 ₹{{ trip[3] }}
+                    </span>
+                </span>
+                <span class="trip-meta-item">👥 {{ trip[4] }} {{ t.travelers }}</span>
+                <span class="trip-meta-item">🎯 {{ trip[5] }}</span>
+                {% if trip[6] %}
+                <span class="trip-meta-item">❤️ {{ trip[6] }}</span>
+                {% endif %}
+                {% if has_created_at and trip[8] %}
+                <span class="trip-meta-item">📆 {{ trip[8][:10] }}</span>
+                {% endif %}
+                <!-- Map Link in Meta -->
+                {% if has_coordinates and trip[9] and trip[10] %}
+                <span class="trip-meta-item">
+                    📍 <a href="#" onclick="openMap({{ trip[9] }}, {{ trip[10] }}, '{{ trip[1] }}')" 
+                          style="color: #2563EB; text-decoration: none; font-weight: 600;">
+                        {{ t.location_map }}
+                    </a>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="trip-actions">
+            <a href="/dashboard" class="btn btn-secondary">← {{ t.back_to_dashboard }}</a>
+            <form action="/delete_trip/{{ trip[0] }}" method="POST" style="display: inline;" 
+                  onsubmit="return confirm('{{ t.delete_confirm }}');">
+                <button type="submit" class="btn btn-danger">🗑️ {{ t.delete }}</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Itinerary Content -->
+    <div class="itinerary-content">
+        {{ itinerary|safe }}
+    </div>
+
+    <!-- MAP SECTION -->
+    {% if has_coordinates and trip[9] and trip[10] %}
+    <div class="map-container">
+        <h3>{{ t.location_map }}</h3>
+        <a href="#" onclick="openMap({{ trip[9] }}, {{ trip[10] }}, '{{ trip[1] }}')" class="map-link">
+            {{ t.open_in_map }}
+        </a>
+        <div id="map"></div>
+    </div>
+    {% else %}
+    <div class="map-container">
+        <h3>{{ t.location_map }}</h3>
+        <div class="no-map-message">
+            <div class="icon">🗺️</div>
+            <p>{{ t.no_location_data }}</p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">{{ t.location_captured }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <a href="/dashboard" class="back-link">← {{ t.back_to_dashboard }}</a>
+</div>
+
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // Initialize map when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if has_coordinates and trip[9] and trip[10] %}
+        initMap();
+        {% endif %}
+    });
+
+    function initMap() {
+        var lat = {{ trip[9] }};
+        var lng = {{ trip[10] }};
+        
+        // Create map
+        var map = L.map('map').setView([lat, lng], 13);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Add marker
+        var marker = L.marker([lat, lng])
+            .addTo(map)
+            .bindPopup('<div style="padding: 8px; font-weight: 600; font-size: 14px;">📍 {{ trip[1] }}</div>')
+            .openPopup();
+        
+        // Fit map to marker with padding
+        map.fitBounds([[lat - 0.05, lng - 0.05], [lat + 0.05, lng + 0.05]]);
+        
+        // Update map size after loading (fixes layout issues)
+        setTimeout(function() {
+            map.invalidateSize();
+        }, 500);
+    }
+
+    function openMap(lat, lng, destination) {
+        window.open(`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=15`, '_blank');
+    }
+</script>
+
+</body>
+</html>

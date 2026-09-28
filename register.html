@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.register }} - AI Travel Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <style>
+        /* Auth Pages Common Styles */
+        .auth-page {
+            min-height: 100vh;
+            background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+                url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=80");
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 48px 40px;
+            border-radius: 24px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 420px;
+            animation: slideUp 0.8s ease forwards;
+        }
+
+        .auth-container h1 {
+            color: #2563EB;
+            font-size: 32px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .auth-container .subtitle {
+            text-align: center;
+            color: #64748B;
+            font-size: 16px;
+            margin-bottom: 32px;
+        }
+
+        .auth-container form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .auth-container .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .auth-container label {
+            font-weight: 500;
+            color: #1a1a2e;
+            font-size: 14px;
+        }
+
+        .auth-container input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+            background: #ffffff;
+            color: #1a1a2e;
+        }
+
+        .auth-container input:focus {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .auth-container input::placeholder {
+            color: #94a3b8;
+        }
+
+        .auth-container button {
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2563EB, #38BDF8);
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+        }
+
+        .auth-container button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);
+        }
+
+        .auth-container button:active {
+            transform: scale(0.98);
+        }
+
+        .auth-container .auth-link {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 15px;
+            color: #64748B;
+        }
+
+        .auth-container .auth-link a {
+            color: #2563EB;
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .auth-container .auth-link a:hover {
+            color: #1D4ED8;
+            text-decoration: underline;
+        }
+
+        /* Password strength indicator */
+        .password-strength {
+            margin-top: 4px;
+            font-size: 12px;
+        }
+
+        .password-strength.weak {
+            color: #ef4444;
+        }
+
+        .password-strength.medium {
+            color: #f59e0b;
+        }
+
+        .password-strength.strong {
+            color: #10b981;
+        }
+
+        /* Error and Success messages */
+        .auth-message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .auth-message.error {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            color: #dc2626;
+        }
+
+        .auth-message.success {
+            background: #ecfdf5;
+            border-left: 4px solid #10b981;
+            color: #059669;
+        }
+
+        .language-selector {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .lang-select {
+            padding: 8px 16px;
+            border-radius: 50px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .lang-select:focus {
+            border-color: #2563EB;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 32px 24px;
+            }
+
+            .auth-container h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <div class="language-selector">
+                <select onchange="window.location.href='/set_language/' + this.value" class="lang-select">
+                    {% for code, name in languages.items() %}
+                        <option value="{{ code }}" {% if lang == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <h1>✈ {{ t.register }}</h1>
+            <p class="subtitle">{{ t.register_title }}</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="auth-message {{ category }}">
+                            {% if category == 'error' %}⚠{% else %}✓{% endif %}
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="/register" method="POST">
+                <div class="form-group">
+                    <label for="name">{{ t.full_name }}</label>
+                    <input type="text" id="name" name="name" placeholder="{{ t.enter_name }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">{{ t.email }}</label>
+                    <input type="email" id="email" name="email" placeholder="{{ t.enter_email }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">{{ t.password }}</label>
+                    <input type="password" id="password" name="password" placeholder="{{ t.create_password }}" 
+                           minlength="6" required onkeyup="checkPasswordStrength(this.value)">
+                    <div class="password-strength" id="passwordStrength"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">{{ t.confirm_password }}</label>
+                    <input type="password" id="confirm_password" name="confirm_password" 
+                           placeholder="{{ t.confirm_password_placeholder }}" required>
+                </div>
+
+                <button type="submit">{{ t.register }}</button>
+            </form>
+
+            <div class="auth-link">
+                {{ t.already_account }} <a href="/login">{{ t.login }}</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Password strength checker
+        function checkPasswordStrength(password) {
+            const strengthIndicator = document.getElementById('passwordStrength');
+            
+            if (password.length === 0) {
+                strengthIndicator.textContent = '';
+                return;
+            }
+
+            let strength = 0;
+            
+            // Check length
+            if (password.length >= 6) strength++;
+            if (password.length >= 10) strength++;
+            
+            // Check for mixed case
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            
+            // Check for numbers
+            if (/\d/.test(password)) strength++;
+            
+            // Check for special characters
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+
+            let strengthText = '';
+            let strengthClass = '';
+
+            switch(strength) {
+                case 0:
+                case 1:
+                    strengthText = document.querySelector('html').lang === 'hi' ? 'कमजोर पासवर्ड' : 
+                                  document.querySelector('html').lang === 'ta' ? 'பலவீனமான கடவுச்சொல்' :
+                                  document.querySelector('html').lang === 'es' ? 'Contraseña débil' :
+                                  document.querySelector('html').lang === 'fr' ? 'Mot de passe faible' :
+                                  document.querySelector('html').lang === 'de' ? 'Schwaches Passwort' :
+                                  document.querySelector('html').lang === 'ja' ? '弱いパスワード' :
+                                  document.querySelector('html').lang === 'zh' ? '弱密码' :
+                                  'Weak password';
+                    strengthClass = 'weak';
+                    break;
+                case 2:
+                case 3:
+                    strengthText = document.querySelector('html').lang === 'hi' ? 'मध्यम पासवर्ड' :
+                                  document.querySelector('html').lang === 'ta' ? 'மிதமான கடவுச்சொல்' :
+                                  document.querySelector('html').lang === 'es' ? 'Contraseña media' :
+                                  document.querySelector('html').lang === 'fr' ? 'Mot de passe moyen' :
+                                  document.querySelector('html').lang === 'de' ? 'Mittleres Passwort' :
+                                  document.querySelector('html').lang === 'ja' ? '中程度のパスワード' :
+                                  document.querySelector('html').lang === 'zh' ? '中等密码' :
+                                  'Medium password';
+                    strengthClass = 'medium';
+                    break;
+                case 4:
+                case 5:
+                    strengthText = document.querySelector('html').lang === 'hi' ? 'मजबूत पासवर्ड' :
+                                  document.querySelector('html').lang === 'ta' ? 'வலுவான கடவுச்சொல்' :
+                                  document.querySelector('html').lang === 'es' ? 'Contraseña fuerte' :
+                                  document.querySelector('html').lang === 'fr' ? 'Mot de passe fort' :
+                                  document.querySelector('html').lang === 'de' ? 'Starkes Passwort' :
+                                  document.querySelector('html').lang === 'ja' ? '強いパスワード' :
+                                  document.querySelector('html').lang === 'zh' ? '强密码' :
+                                  'Strong password';
+                    strengthClass = 'strong';
+                    break;
+            }
+
+            strengthIndicator.textContent = strengthText;
+            strengthIndicator.className = 'password-strength ' + strengthClass;
+        }
+    </script>
+</body>
+</html>

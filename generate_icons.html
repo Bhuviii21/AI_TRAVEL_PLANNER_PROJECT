@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PWA Icons</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f4ff;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2563EB; margin-top: 0; }
+        .info {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #2563EB;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #2563EB, #38BDF8);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+        }
+        .btn-download {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 8px;
+            transition: 0.3s;
+        }
+        .btn-download:hover {
+            background: #059669;
+        }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .icon-item {
+            text-align: center;
+            border: 2px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 12px;
+            background: white;
+            transition: 0.3s;
+        }
+        .icon-item:hover {
+            border-color: #2563EB;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+        }
+        .icon-item img {
+            border-radius: 12px;
+            display: block;
+            margin: 0 auto;
+        }
+        .icon-item p {
+            margin: 8px 0 4px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        .icon-item .size {
+            color: #64748B;
+            font-size: 0.85rem;
+        }
+        .progress {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #2563EB;
+            font-weight: 600;
+        }
+        .progress.show {
+            display: block;
+        }
+        .success-msg {
+            display: none;
+            background: #dcfce7;
+            color: #166534;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #22c55e;
+        }
+        .success-msg.show {
+            display: block;
+        }
+        .instructions {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #f59e0b;
+        }
+        .instructions code {
+            background: #1a1a2e;
+            color: #f8fafc;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        @media (max-width: 600px) {
+            .icon-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+            }
+            .icon-item {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 PWA Icon Generator</h1>
+        <p>Generate all the icons needed for your AI Travel Planner PWA</p>
+
+        <div class="info">
+            <strong>📱 What this does:</strong>
+            <ul style="margin: 8px 0 0; padding-left: 20px;">
+                <li>Creates 8 different icon sizes (72px to 512px)</li>
+                <li>Uses your app's color scheme (#2563EB)</li>
+                <li>All icons are ready to use in your PWA</li>
+            </ul>
+        </div>
+
+        <button class="btn-primary" onclick="generateAllIcons()">
+            🚀 Generate All Icons
+        </button>
+
+        <div class="progress" id="progress">Generating icons... Please wait.</div>
+        <div class="success-msg" id="successMsg">
+            ✅ All icons generated successfully! Download them below.
+        </div>
+
+        <div id="iconGrid" class="icon-grid"></div>
+
+        <div class="instructions" id="instructions" style="display:none;">
+            <strong>📁 Next Steps:</strong>
+            <ol style="margin: 8px 0 0; padding-left: 20px;">
+                <li>Click each <strong>"Download"</strong> button to save the icons</li>
+                <li>Save them in your <code>static/icons/</code> folder</li>
+                <li>Make sure the filenames match: <code>icon-72x72.png</code>, <code>icon-96x96.png</code>, etc.</li>
+                <li>Your <code>manifest.json</code> is already configured for these icons</li>
+            </ol>
+        </div>
+
+        <button id="downloadAllBtn" class="btn-primary" style="display:none; margin-top: 10px;" onclick="downloadAllAsZip()">
+            📦 Download All as ZIP
+        </button>
+    </div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        let generatedIcons = [];
+
+        function generateIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Background with gradient
+            const gradient = ctx.createRadialGradient(
+                size * 0.3, size * 0.3, 0,
+                size * 0.5, size * 0.5, size * 0.7
+            );
+            gradient.addColorStop(0, '#38BDF8');
+            gradient.addColorStop(1, '#2563EB');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Rounded square effect
+            ctx.fillStyle = 'rgba(255,255,255,0.08)';
+            const margin = size * 0.05;
+            const radius = size * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(margin + radius, margin);
+            ctx.lineTo(size - margin - radius, margin);
+            ctx.quadraticCurveTo(size - margin, margin, size - margin, margin + radius);
+            ctx.lineTo(size - margin, size - margin - radius);
+            ctx.quadraticCurveTo(size - margin, size - margin, size - margin - radius, size - margin);
+            ctx.lineTo(margin + radius, size - margin);
+            ctx.quadraticCurveTo(margin, size - margin, margin, size - margin - radius);
+            ctx.lineTo(margin, margin + radius);
+            ctx.quadraticCurveTo(margin, margin, margin + radius, margin);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw travel icon (Airplane)
+            ctx.fillStyle = 'white';
+            const fontSize = size * 0.45;
+            ctx.font = `${fontSize}px Arial, "Segoe UI Emoji", "Apple Color Emoji"`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✈', size * 0.5, size * 0.5);
+
+            // Small glow effect
+            ctx.shadowColor = 'rgba(255,255,255,0.3)';
+            ctx.shadowBlur = size * 0.05;
+            
+            // Draw "AI" text at bottom
+            if (size >= 128) {
+                ctx.shadowBlur = 0;
+                ctx.font = `${size * 0.1}px Arial`;
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.fillText('AI', size * 0.5, size * 0.85);
+            }
+
+            return canvas;
+        }
+
+        function generateAllIcons() {
+            const progress = document.getElementById('progress');
+            const grid = document.getElementById('iconGrid');
+            const successMsg = document.getElementById('successMsg');
+            const instructions = document.getElementById('instructions');
+            const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+            progress.className = 'progress show';
+            grid.innerHTML = '';
+            generatedIcons = [];
+
+            setTimeout(() => {
+                sizes.forEach((size, index) => {
+                    setTimeout(() => {
+                        const canvas = generateIcon(size);
+                        const dataUrl = canvas.toDataURL('image/png');
+                        generatedIcons.push({ size, dataUrl });
+
+                        const div = document.createElement('div');
+                        div.className = 'icon-item';
+                        const displaySize = Math.min(size, 100);
+                        div.innerHTML = `
+                            <img src="${dataUrl}" 
+                                 width="${displaySize}" 
+                                 height="${displaySize}" 
+                                 alt="Icon ${size}x${size}"
+                                 loading="lazy">
+                            <p>${size}×${size}</p>
+                            <button class="btn-download" onclick="downloadIcon(${size})">
+                                ⬇ Download
+                            </button>
+                        `;
+                        grid.appendChild(div);
+
+                        if (index === sizes.length - 1) {
+                            progress.className = 'progress';
+                            successMsg.className = 'success-msg show';
+                            instructions.style.display = 'block';
+                            downloadAllBtn.style.display = 'block';
+                        }
+                    }, index * 100);
+                });
+            }, 300);
+        }
+
+        function downloadIcon(size) {
+            const data = generatedIcons.find(d => d.size === size);
+            if (data) {
+                const link = document.createElement('a');
+                link.download = `icon-${size}x${size}.png`;
+                link.href = data.dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        function downloadAllAsZip() {
+            // Create a page with all icons for easy downloading
+            let html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>PWA Icons - AI Travel Planner</title>
+                <style>
+                    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                    h1 { color: #2563EB; }
+                    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+                    .item { text-align: center; border: 1px solid #ddd; padding: 20px; border-radius: 10px; }
+                    img { border-radius: 10px; }
+                    .btn { display: inline-block; padding: 10px 20px; background: #2563EB; color: white; text-decoration: none; border-radius: 8px; margin-top: 10px; }
+                    .btn:hover { background: #1D4ED8; }
+                </style>
+            </head>
+            <body>
+                <h1>🎨 PWA Icons - AI Travel Planner</h1>
+                <p>Download each icon individually or use the links below</p>
+                <div class="grid">
+            `;
+
+            generatedIcons.forEach(data => {
+                html += `
+                    <div class="item">
+                        <img src="${data.dataUrl}" width="${Math.min(data.size, 100)}" height="${Math.min(data.size, 100)}">
+                        <p><strong>${data.size}×${data.size}</strong></p>
+                        <a href="${data.dataUrl}" download="icon-${data.size}x${data.size}.png" class="btn">Download</a>
+                    </div>
+                `;
+            });
+
+            html += `
+                </div>
+                <p style="margin-top: 30px; color: #64748B;">
+                    💡 Save these icons in your <code>static/icons/</code> folder
+                </p>
+                <script>
+                    // Auto-download all icons as individual files
+                    document.querySelectorAll('.btn').forEach((btn, index) => {
+                        setTimeout(() => {
+                            btn.click();
+                        }, index * 500);
+                    });
+                <\/script>
+            </body>
+            </html>
+            `;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const link = document.createElement('a');
+            link.download = 'pwa-icons-page.html';
+            link.href = URL.createObjectURL(blob);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            alert('📦 A HTML page with all icons has been downloaded. Open it in your browser to download each icon individually.');
+        }
+
+        // Auto-generate on load
+        window.onload = function() {
+            generateAllIcons();
+        };
+    </script>
+</body>
+</html>

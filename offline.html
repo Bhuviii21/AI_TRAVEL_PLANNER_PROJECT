@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - AI Travel Planner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f0f5ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2563EB;
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+        p {
+            color: #64748B;
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        .btn {
+            display: inline-block;
+            background: #2563EB;
+            color: white;
+            text-decoration: none;
+            padding: 12px 32px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .btn:hover {
+            background: #1D4ED8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+        }
+        .retry-btn {
+            background: #10b981;
+            margin-top: 12px;
+        }
+        .retry-btn:hover {
+            background: #059669;
+        }
+        @media (max-width: 480px) {
+            .container { padding: 24px; }
+            .icon { font-size: 60px; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📡</div>
+        <h1>You're Offline</h1>
+        <p>
+            Looks like you've lost your internet connection. 
+            Don't worry! Some features of AI Travel Planner 
+            are available offline.
+        </p>
+        <p style="font-size: 14px; color: #94a3b8;">
+            💡 Try checking your connection or come back when you're online.
+        </p>
+        <a href="/" class="btn">Go to Home</a>
+        <br>
+        <button onclick="retryConnection()" class="btn retry-btn">
+            🔄 Retry Connection
+        </button>
+    </div>
+
+    <script>
+        function retryConnection() {
+            const btn = document.querySelector('.retry-btn');
+            btn.textContent = '⏳ Checking...';
+            btn.disabled = true;
+            
+            // Try to fetch a small resource to check connectivity
+            fetch('/static/style.css')
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        throw new Error('Still offline');
+                    }
+                })
+                .catch(() => {
+                    btn.textContent = '🔄 Retry Connection';
+                    btn.disabled = false;
+                    alert('Still offline. Please check your internet connection.');
+                });
+        }
+    </script>
+</body>
+</html>

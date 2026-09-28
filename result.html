@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+
+<head>
+<title>{{ t.trip_plan }} - AI Travel Planner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+        min-height: 100vh;
+    }
+
+    .result-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(37, 99, 235, 0.15);
+        border: 1px solid rgba(37, 99, 235, 0.1);
+        animation: slideUp 0.6s ease forwards;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .result-header {
+        text-align: center;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #f1f5f9;
+        margin-bottom: 2rem;
+    }
+
+    .result-title {
+        color: #2563EB;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #2563EB, #38BDF8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .destination-badge {
+        display: inline-block;
+        padding: 8px 24px;
+        background: linear-gradient(135deg, #2563EB, #38BDF8);
+        color: white;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+
+    .trip-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 16px;
+    }
+
+    .meta-item {
+        text-align: center;
+        padding: 0.5rem;
+    }
+
+    .meta-item .icon {
+        font-size: 1.5rem;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .meta-item .label {
+        color: #64748B;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .meta-item .value {
+        font-weight: 700;
+        color: #1a1a2e;
+        font-size: 1.1rem;
+    }
+
+    .budget-summary {
+        background: linear-gradient(135deg, #2563EB, #38BDF8);
+        padding: 1.5rem;
+        border-radius: 16px;
+        margin: 2rem 0;
+        text-align: center;
+        color: white;
+        box-shadow: 0 8px 30px rgba(37, 99, 235, 0.25);
+    }
+
+    .budget-summary .label {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    .budget-summary .amount {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0.25rem 0;
+    }
+
+    .budget-summary .sub-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    .itinerary {
+        padding: 1.5rem 0;
+        line-height: 1.8;
+        color: #1a1a2e;
+    }
+
+    .itinerary h1 {
+        color: #2563EB;
+        font-size: 2rem;
+        border-left: 4px solid #2563EB;
+        padding-left: 1rem;
+        margin-top: 2rem;
+    }
+
+    .itinerary h2 {
+        color: #2563EB;
+        font-size: 1.5rem;
+        margin-top: 1.5rem;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 0.5rem;
+    }
+
+    .itinerary h3 {
+        color: #38BDF8;
+        font-size: 1.2rem;
+        margin-top: 1.2rem;
+    }
+
+    .itinerary ul, 
+    .itinerary ol {
+        padding-left: 1.5rem;
+    }
+
+    .itinerary li {
+        margin-bottom: 0.5rem;
+        padding-left: 0.5rem;
+    }
+
+    .itinerary li::marker {
+        color: #2563EB;
+    }
+
+    .itinerary p {
+        margin-bottom: 1rem;
+        color: #334155;
+    }
+
+    .itinerary blockquote {
+        border-left: 4px solid #38BDF8;
+        padding-left: 1.5rem;
+        margin: 1rem 0;
+        color: #64748B;
+        font-style: italic;
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+    }
+
+    .itinerary table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .itinerary th {
+        background: linear-gradient(135deg, #2563EB, #38BDF8);
+        color: white;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .itinerary td {
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+    }
+
+    .itinerary tr:nth-child(even) {
+        background: #f8fafc;
+    }
+
+    .btn-container {
+        text-align: center;
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding-top: 1.5rem;
+        border-top: 2px solid #f1f5f9;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 12px 32px;
+        color: white;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: 0.3s;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        min-height: 48px;
+        min-width: 48px;
+        touch-action: manipulation;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #2563EB, #38BDF8);
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #64748B, #94A3B8);
+        box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);
+    }
+
+    .btn-secondary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(100, 116, 139, 0.4);
+    }
+
+    .btn:active {
+        transform: scale(0.97);
+    }
+
+    .language-selector {
+        text-align: right;
+        margin-bottom: 1rem;
+    }
+
+    .lang-select {
+        padding: 8px 16px;
+        border-radius: 50px;
+        border: 2px solid #e2e8f0;
+        background: white;
+        font-size: 0.9rem;
+        cursor: pointer;
+        outline: none;
+        transition: 0.3s;
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .lang-select:focus {
+        border-color: #2563EB;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .result-container {
+            padding: 1.5rem;
+            margin: 1rem;
+            border-radius: 18px;
+        }
+
+        .result-title {
+            font-size: 2rem;
+        }
+
+        .budget-summary .amount {
+            font-size: 2rem;
+        }
+
+        .btn-container {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+            text-align: center;
+            padding: 14px;
+        }
+
+        .trip-meta-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .meta-item .value {
+            font-size: 0.95rem;
+        }
+
+        .destination-badge {
+            font-size: 0.95rem;
+            padding: 6px 18px;
+        }
+
+        .itinerary h1 {
+            font-size: 1.6rem;
+        }
+
+        .itinerary h2 {
+            font-size: 1.3rem;
+        }
+
+        .itinerary h3 {
+            font-size: 1.1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .result-container {
+            padding: 1rem;
+            margin: 0.75rem;
+            border-radius: 14px;
+        }
+
+        .result-title {
+            font-size: 1.6rem;
+        }
+
+        .budget-summary {
+            padding: 1rem;
+        }
+
+        .budget-summary .amount {
+            font-size: 1.5rem;
+        }
+
+        .trip-meta-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 0.3rem;
+            padding: 0.75rem;
+        }
+
+        .meta-item {
+            padding: 0.3rem;
+        }
+
+        .meta-item .icon {
+            font-size: 1.2rem;
+        }
+
+        .meta-item .label {
+            font-size: 0.7rem;
+        }
+
+        .meta-item .value {
+            font-size: 0.85rem;
+        }
+
+        .lang-select {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="result-container">
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <select onchange="window.location.href='/set_language/' + this.value" class="lang-select">
+            {% for code, name in languages.items() %}
+                <option value="{{ code }}" {% if lang == code %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Header -->
+    <div class="result-header">
+        <h1 class="result-title">🌍 {{ t.trip_plan }}</h1>
+        <span class="destination-badge">📍 {{ destination }}</span>
+    </div>
+
+    <!-- Trip Meta -->
+    <div class="trip-meta-grid">
+        <div class="meta-item">
+            <span class="icon">📅</span>
+            <div class="label">{{ t.days }}</div>
+            <div class="value">{{ days }} {{ t.days_short }}</div>
+        </div>
+        <div class="meta-item">
+            <span class="icon">👥</span>
+            <div class="label">{{ t.travelers }}</div>
+            <div class="value">{{ travelers }}</div>
+        </div>
+        <div class="meta-item">
+            <span class="icon">🎯</span>
+            <div class="label">{{ t.style }}</div>
+            <div class="value">{{ style }}</div>
+        </div>
+        {% if interests %}
+        <div class="meta-item">
+            <span class="icon">❤️</span>
+            <div class="label">{{ t.interests }}</div>
+            <div class="value">{{ interests }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Budget Summary -->
+    <div class="budget-summary">
+        <div class="label">💰 {{ t.your_budget }}</div>
+        <div class="amount">₹{{ budget }}</div>
+        <div class="sub-label">{{ t.trip_generated }}</div>
+    </div>
+
+    <!-- Itinerary Content -->
+    <div class="itinerary">
+        {{ itinerary|safe }}
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-container">
+        <a href="/dashboard" class="btn btn-primary">{{ t.view_all_trips }}</a>
+        <a href="/home" class="btn btn-secondary">{{ t.plan_another }}</a>
+    </div>
+</div>
+
+</body>
+</html>

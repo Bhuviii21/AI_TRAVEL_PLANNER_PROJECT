@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>AI Travel Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2563EB">
+    <!-- PWA Meta Tags -->
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Travel AI">
+<meta name="theme-color" content="#2563EB">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- Icons -->
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+<link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+<link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='icons/icon-512x512.png') }}">
+
+    <style>
+        /* Mobile Responsive Styles */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background: #f8fafc;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            color: #2563EB;
+            background: linear-gradient(135deg, #2563EB, #38BDF8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: #1a1a2e;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+
+        .nav-links a:hover:not(.btn-nav):not(.btn-logout) {
+            color: #2563EB;
+        }
+
+        .btn-nav, .btn-logout {
+            padding: 8px 20px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.3s;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            border: none;
+            cursor: pointer;
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+        }
+
+        .btn-nav {
+            background: linear-gradient(135deg, #2563EB, #38BDF8);
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-nav:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-logout {
+            background: #ef4444;
+            color: white !important;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .language-selector {
+            display: inline-block;
+        }
+
+        .lang-select {
+            padding: 6px 12px;
+            border-radius: 50px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+            transition: 0.3s;
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        .lang-select:focus {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .hero {
+            min-height: 90vh;
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .overlay {
+            max-width: 1200px;
+            width: 100%;
+            padding: 2rem;
+            border-radius: 24px;
+        }
+
+        .hero-text {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .hero-text h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .hero-text p {
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            opacity: 0.9;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .location-status {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        .location-status .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .location-status .dot.green {
+            background: #22c55e;
+            animation: pulse 1.5s infinite;
+        }
+
+        .location-status .dot.red {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .hero-form {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+        }
+
+        .hero-form input,
+        .hero-form select {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+            background: white;
+            width: 100%;
+            -webkit-appearance: none;
+            min-height: 48px;
+        }
+
+        .hero-form input:focus,
+        .hero-form select:focus {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .hero-form input::placeholder {
+            color: #94a3b8;
+        }
+
+        .hero-form .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .hero-form button {
+            grid-column: 1 / -1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2563EB, #38BDF8);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            letter-spacing: 0.5px;
+            min-height: 52px;
+            touch-action: manipulation;
+        }
+
+        .hero-form button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);
+        }
+
+        .hero-form button:active {
+            transform: scale(0.98);
+        }
+
+        .hero-form .error-message {
+            grid-column: 1 / -1;
+            color: #ef4444;
+            font-size: 0.85rem;
+            display: none;
+            background: #fef2f2;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 3px solid #ef4444;
+        }
+
+        .hero-form .error-message.show {
+            display: block;
+        }
+
+        .destinations {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .destinations h2 {
+            text-align: center;
+            font-size: 2.2rem;
+            color: #1a1a2e;
+        }
+
+        .section-text {
+            text-align: center;
+            color: #64748B;
+            margin-bottom: 2rem;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: 0.3s;
+            border: 1px solid #f1f5f9;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .card-content h3 {
+            margin: 0 0 0.5rem;
+            color: #1a1a2e;
+        }
+
+        .card-content p {
+            color: #64748B;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #64748B;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            max-width: 900px;
+            margin: 1rem auto 0;
+            padding: 0 1rem;
+        }
+
+        .flash-message {
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .flash-message.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .flash-message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .hero-text h1 {
+                font-size: 2.4rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                padding: 0.75rem 1rem;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .logo h1 {
+                font-size: 1.4rem;
+                text-align: center;
+            }
+
+            .nav-links {
+                justify-content: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+
+            .nav-links a {
+                font-size: 0.85rem;
+            }
+
+            .btn-nav, .btn-logout {
+                padding: 6px 14px;
+                font-size: 0.8rem;
+                min-height: 38px;
+                min-width: 38px;
+            }
+
+            .hero-text h1 {
+                font-size: 1.8rem;
+            }
+
+            .hero-text p {
+                font-size: 0.95rem;
+            }
+
+            .hero-form {
+                padding: 1.5rem;
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .hero-form .full-width {
+                grid-column: 1;
+            }
+
+            .hero-form input,
+            .hero-form select {
+                padding: 10px 14px;
+                font-size: 0.95rem;
+                min-height: 44px;
+            }
+
+            .hero-form button {
+                padding: 14px;
+                font-size: 1rem;
+                grid-column: 1;
+                min-height: 48px;
+            }
+
+            .destinations {
+                padding: 2rem 1rem;
+            }
+
+            .destinations h2 {
+                font-size: 1.6rem;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .card img {
+                height: 180px;
+            }
+
+            .lang-select {
+                font-size: 0.8rem;
+                padding: 4px 10px;
+                min-height: 38px;
+                min-width: 38px;
+            }
+
+            .location-status {
+                font-size: 0.8rem;
+                padding: 0.4rem 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero {
+                padding: 1rem;
+                min-height: 100vh;
+            }
+
+            .overlay {
+                padding: 1rem;
+            }
+
+            .hero-text h1 {
+                font-size: 1.5rem;
+            }
+
+            .hero-text p {
+                font-size: 0.85rem;
+            }
+
+            .hero-form {
+                padding: 1rem;
+                border-radius: 16px;
+            }
+
+            .hero-form input,
+            .hero-form select {
+                font-size: 16px !important;
+                min-height: 40px;
+                padding: 8px 12px;
+            }
+
+            .hero-form button {
+                min-height: 44px;
+                font-size: 0.95rem;
+                padding: 12px;
+            }
+
+            .nav-links {
+                gap: 0.3rem;
+            }
+
+            .nav-links a {
+                font-size: 0.75rem;
+            }
+
+            .btn-nav, .btn-logout {
+                padding: 4px 10px;
+                font-size: 0.7rem;
+                min-height: 34px;
+                min-width: 34px;
+            }
+
+            .logo h1 {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Touch-friendly buttons */
+        button, a.btn-nav, a.btn-logout, .btn {
+            touch-action: manipulation;
+        }
+
+        input, select {
+            font-size: 16px !important;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav>
+        <div class="logo">
+            <h1>✈ AI Travel Planner</h1>
+        </div>
+        <div class="nav-links">
+            <a href="/home">{{ t.home }}</a>
+            <a href="#destinations">{{ t.popular_destinations }}</a>
+            
+            <!-- Language Selector -->
+            <div class="language-selector">
+                <select onchange="window.location.href='/set_language/' + this.value" class="lang-select">
+                    {% for code, name in languages.items() %}
+                        <option value="{{ code }}" {% if lang == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            {% if session.get('user_id') %}
+                <span style="color: #2563EB; font-weight: 600; font-size: 0.9rem;">{{ t.welcome }}, {{ session.get('user_name') }}!</span>
+                <a href="/logout" class="btn-logout">{{ t.logout }}</a>
+            {% else %}
+                <a href="/login" class="btn-nav">{{ t.login }}</a>
+                <a href="/register" class="btn-nav">{{ t.register }}</a>
+            {% endif %}
+        </div>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="overlay">
+        <div class="hero-text">
+            <h1>{{ t.plan_dream }}</h1>
+            <p>{{ t.discover_destinations }}</p>
+            
+            <!-- Location Status Indicator -->
+            <div class="location-status" id="locationStatus">
+                <span class="dot" id="locationDot"></span>
+                <span id="locationText">Detecting location...</span>
+            </div>
+
+            {% if session.get('user_id') %}
+                <div style="margin-top: 20px;">
+                    <a href="/dashboard" style="background: white; color: #2563EB; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 700; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.2); min-height: 48px; min-width: 48px;">📋 {{ t.saved_trips }}</a>
+                </div>
+            {% endif %}
+        </div>
+        <form action="/generate" method="POST" class="hero-form" id="tripForm" onsubmit="return validateForm()">
+            <input type="text" name="destination" id="destination" placeholder="{{ t.destination }}" required pattern="[a-zA-Z\s\-.,]+" title="Destination should only contain letters and spaces">
+            <input type="number" name="days" id="days" placeholder="{{ t.days }}" required min="1" step="1">
+            <input type="number" name="budget" id="budget" placeholder="{{ t.budget }}" required min="1" step="1">
+            <input type="number" name="travelers" id="travelers" placeholder="{{ t.travelers }}" required min="1" step="1">
+            <select name="style" class="full-width" required>
+                <option value="">Select Travel Style</option>
+                <option>Budget</option>
+                <option>Luxury</option>
+                <option>Adventure</option>
+                <option>Family</option>
+                <option>Couple</option>
+            </select>
+            <input type="text" name="interests" placeholder="{{ t.interests }}" class="full-width">
+            
+            <div class="error-message" id="formError"></div>
+            
+            <!-- Hidden fields for location -->
+            <input type="hidden" name="latitude" id="latitude" value="">
+            <input type="hidden" name="longitude" id="longitude" value="">
+            
+            <button type="submit" id="submitBtn">✈ {{ t.generate_trip }}</button>
+        </form>
+    </div>
+</section>
+
+<section id="destinations" class="destinations">
+    <h2>{{ t.popular_destinations }}</h2>
+    <p class="section-text">{{ t.explore_destinations }}</p>
+    <div class="cards">
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600" alt="Bali" loading="lazy">
+            <div class="card-content">
+                <h3>🏝 Bali</h3>
+                <p>Tropical paradise with crystal-clear beaches, temples, and stunning sunsets.</p>
+            </div>
+        </div>
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600" alt="Paris" loading="lazy">
+            <div class="card-content">
+                <h3>🗼 Paris</h3>
+                <p>Experience romance, iconic landmarks, world-class cuisine, and culture.</p>
+            </div>
+        </div>
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" alt="Switzerland" loading="lazy">
+            <div class="card-content">
+                <h3>🏔 Switzerland</h3>
+                <p>Explore snowy mountains, scenic train journeys, and breathtaking landscapes.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>© 2026 AI Travel Planner | Powered by Flask & AI</p>
+</footer>
+
+<script>
+    // Get user location for map integration
+    document.addEventListener('DOMContentLoaded', function() {
+        const latitudeInput = document.getElementById('latitude');
+        const longitudeInput = document.getElementById('longitude');
+        const locationStatus = document.getElementById('locationStatus');
+        const locationDot = document.getElementById('locationDot');
+        const locationText = document.getElementById('locationText');
+        
+        // Check if geolocation is available
+        if (navigator.geolocation) {
+            locationText.textContent = 'Getting your location...';
+            locationDot.className = 'dot';
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    latitudeInput.value = lat;
+                    longitudeInput.value = lng;
+                    
+                    locationDot.className = 'dot green';
+                    locationText.textContent = `📍 Location detected (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                    
+                    console.log('Location captured:', lat, lng);
+                },
+                function(error) {
+                    console.log('Location error:', error.message);
+                    locationDot.className = 'dot red';
+                    locationText.textContent = '⚠️ Location access denied. Using default location.';
+                    
+                    latitudeInput.value = '28.6139';
+                    longitudeInput.value = '77.2090';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        } else {
+            locationDot.className = 'dot red';
+            locationText.textContent = '⚠️ Geolocation not supported. Using default location.';
+            
+            latitudeInput.value = '28.6139';
+            longitudeInput.value = '77.2090';
+        }
+    });
+
+    // Form validation
+    function validateForm() {
+        const destination = document.getElementById('destination');
+        const days = document.getElementById('days');
+        const budget = document.getElementById('budget');
+        const travelers = document.getElementById('travelers');
+        const errorDiv = document.getElementById('formError');
+        
+        // Reset error
+        errorDiv.textContent = '';
+        errorDiv.className = 'error-message';
+        
+        // Validate destination - only letters and spaces
+        const destValue = destination.value.trim();
+        if (!/^[a-zA-Z\s\-.,]+$/.test(destValue)) {
+            errorDiv.textContent = 'Destination should only contain letters and spaces';
+            errorDiv.className = 'error-message show';
+            destination.focus();
+            destination.style.borderColor = '#ef4444';
+            return false;
+        }
+        destination.style.borderColor = '#e2e8f0';
+        
+        // Validate days - positive number
+        if (parseInt(days.value) <= 0 || isNaN(parseInt(days.value))) {
+            errorDiv.textContent = 'Days must be a positive number';
+            errorDiv.className = 'error-message show';
+            days.focus();
+            days.style.borderColor = '#ef4444';
+            return false;
+        }
+        days.style.borderColor = '#e2e8f0';
+        
+        // Validate budget - positive number
+        if (parseInt(budget.value) <= 0 || isNaN(parseInt(budget.value))) {
+            errorDiv.textContent = 'Budget must be a positive number';
+            errorDiv.className = 'error-message show';
+            budget.focus();
+            budget.style.borderColor = '#ef4444';
+            return false;
+        }
+        budget.style.borderColor = '#e2e8f0';
+        
+        // Validate travelers - positive number
+        if (parseInt(travelers.value) <= 0 || isNaN(parseInt(travelers.value))) {
+            errorDiv.textContent = 'Travelers must be a positive number';
+            errorDiv.className = 'error-message show';
+            travelers.focus();
+            travelers.style.borderColor = '#ef4444';
+            return false;
+        }
+        travelers.style.borderColor = '#e2e8f0';
+        
+        return true;
+    }
+
+    // Real-time validation feedback
+    document.addEventListener('DOMContentLoaded', function() {
+        const destination = document.getElementById('destination');
+        const days = document.getElementById('days');
+        const budget = document.getElementById('budget');
+        const travelers = document.getElementById('travelers');
+        
+        destination.addEventListener('input', function() {
+            if (this.value && !/^[a-zA-Z\s\-.,]*$/.test(this.value)) {
+                this.style.borderColor = '#ef4444';
+            } else {
+                this.style.borderColor = '#e2e8f0';
+            }
+        });
+        
+        [days, budget, travelers].forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.value && (parseInt(this.value) <= 0 || isNaN(parseInt(this.value)))) {
+                    this.style.borderColor = '#ef4444';
+                } else {
+                    this.style.borderColor = '#e2e8f0';
+                }
+            });
+        });
+    });
+
+    // Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/service-worker.js')
+            .then(function(registration) {
+                console.log('Service Worker registered successfully');
+            })
+            .catch(function(err) {
+                console.log('Service Worker registration failed:', err);
+            });
+    }
+</script>
+
+</body>
+</html>

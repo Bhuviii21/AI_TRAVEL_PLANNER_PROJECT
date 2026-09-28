@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>{{ t.my_trips }} - AI Travel Planner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .dashboard-header h1 {
+        color: #2563EB;
+        font-size: 2rem;
+        margin: 0;
+    }
+
+    .dashboard-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #2563EB, #38BDF8);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #1a1a2e;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+
+    .btn-danger {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+    }
+
+    .filter-section {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        border: 1px solid #e2e8f0;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .filter-group label {
+        font-weight: 600;
+        color: #1a1a2e;
+        font-size: 0.9rem;
+    }
+
+    .filter-group input,
+    .filter-group select {
+        padding: 10px 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: 0.3s;
+        background: white;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+        border-color: #2563EB;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .filter-actions .btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+
+    .stats {
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .stat-card .number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2563EB;
+    }
+
+    .stat-card .label {
+        color: #64748B;
+        font-size: 0.9rem;
+    }
+
+    .trips-table-wrapper {
+        overflow-x: auto;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+    }
+
+    thead {
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    th {
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-weight: 600;
+        color: #1a1a2e;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        color: #1a1a2e;
+    }
+
+    tr:hover {
+        background: #fafbff;
+    }
+
+    .budget-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .budget-low {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .budget-medium {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .budget-high {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .trip-preview {
+        max-width: 300px;
+        font-size: 0.9rem;
+        color: #64748B;
+        line-height: 1.4;
+        word-wrap: break-word;
+    }
+
+    .no-trips {
+        text-align: center;
+        padding: 3rem;
+        color: #64748B;
+    }
+
+    .no-trips .icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .no-trips h3 {
+        color: #1a1a2e;
+        margin-bottom: 0.5rem;
+    }
+
+    .clear-filter {
+        color: #2563EB;
+        cursor: pointer;
+        text-decoration: underline;
+        font-weight: 500;
+        background: none;
+        border: none;
+        font-size: 0.9rem;
+    }
+
+    .clear-filter:hover {
+        color: #1D4ED8;
+    }
+
+    .language-selector {
+        display: inline-block;
+    }
+
+    .lang-select {
+        padding: 6px 12px;
+        border-radius: 50px;
+        border: 2px solid #e2e8f0;
+        background: white;
+        font-size: 0.85rem;
+        cursor: pointer;
+        outline: none;
+        transition: 0.3s;
+    }
+
+    .lang-select:focus {
+        border-color: #2563EB;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .filter-section {
+            flex-direction: column;
+        }
+
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .stats {
+            gap: 1rem;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.75rem 1.25rem;
+        }
+
+        td, th {
+            padding: 0.75rem 1rem;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <h1>📋 {{ t.my_trips }}</h1>
+        <div class="dashboard-actions">
+            <div class="language-selector">
+                <select onchange="window.location.href='/set_language/' + this.value" class="lang-select">
+                    {% for code, name in languages.items() %}
+                        <option value="{{ code }}" {% if lang == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <a href="/home" class="btn btn-secondary">{{ t.home }}</a>
+            <a href="/logout" class="btn btn-danger">{{ t.logout }}</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-card">
+            <div class="number">{{ trips|length }}</div>
+            <div class="label">{{ t.total_trips }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">
+                {% set unique_dest = [] %}
+                {% for trip in trips %}
+                    {% if trip[1] not in unique_dest %}
+                        {% set _ = unique_dest.append(trip[1]) %}
+                    {% endif %}
+                {% endfor %}
+                {{ unique_dest|length }}
+            </div>
+            <div class="label">{{ t.destinations }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">
+                {% set total = 0 %}
+                {% for trip in trips %}
+                    {% set total = total + (trip[3]|int) %}
+                {% endfor %}
+                ₹{{ total }}
+            </div>
+            <div class="label">{{ t.total_budget }}</div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <form method="GET" action="/dashboard" style="display: flex; gap: 1.5rem; flex-wrap: wrap; width: 100%; align-items: flex-end;">
+            <div class="filter-group">
+                <label for="budget_filter">{{ t.max_budget }}</label>
+                <input type="number" id="budget_filter" name="budget" 
+                       placeholder="e.g., 2000" 
+                       value="{{ request.args.get('budget', '') }}">
+            </div>
+
+            <div class="filter-group">
+                <label for="destination_filter">{{ t.destination_filter }}</label>
+                <input type="text" id="destination_filter" name="destination" 
+                       placeholder="{{ t.search_destination }}" 
+                       value="{{ request.args.get('destination', '') }}">
+            </div>
+
+            <div class="filter-group" style="flex: 0.5; min-width: 120px;">
+                <label for="sort_by">{{ t.sort_by }}</label>
+                <select id="sort_by" name="sort">
+                    <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>{{ t.newest }}</option>
+                    <option value="oldest" {% if request.args.get('sort') == 'oldest' %}selected{% endif %}>{{ t.oldest }}</option>
+                    <option value="budget_high" {% if request.args.get('sort') == 'budget_high' %}selected{% endif %}>{{ t.budget_high }}</option>
+                    <option value="budget_low" {% if request.args.get('sort') == 'budget_low' %}selected{% endif %}>{{ t.budget_low }}</option>
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">🔍 {{ t.apply_filters }}</button>
+                <a href="/dashboard" class="btn btn-secondary">{{ t.clear }}</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Trips Table -->
+    <div class="trips-table-wrapper">
+        {% if trips %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>{{ t.destination }}</th>
+                    <th>{{ t.days }}</th>
+                    <th>{{ t.budget }}</th>
+                    <th>{{ t.travelers }}</th>
+                    <th>{{ t.style }}</th>
+                    <th>{{ t.interests }}</th>
+                    <th>{{ t.actions }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trip in trips %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ trip[1] }}</strong></td>
+                    <td>{{ trip[2] }} {{ t.days_short }}</td>
+                    <td>
+                        {% set budget_val = trip[3]|int %}
+                        <span class="budget-badge 
+                            {% if budget_val <= 2000 %}budget-low
+                            {% elif budget_val <= 5000 %}budget-medium
+                            {% else %}budget-high{% endif %}">
+                            ₹{{ trip[3] }}
+                        </span>
+                    </td>
+                    <td>{{ trip[4] }}</td>
+                    <td>{{ trip[5] }}</td>
+                    <td>{{ trip[6] or 'N/A' }}</td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="/view_trip/{{ trip[0] }}" class="btn btn-sm btn-primary" 
+                               style="padding: 6px 14px; font-size: 0.85rem; background: #2563EB; color: white; text-decoration: none; border-radius: 20px;">
+                                👁️ {{ t.view }}
+                            </a>
+                            <form action="/delete_trip/{{ trip[0] }}" method="POST" style="display: inline;"
+                                  onsubmit="return confirm('{{ t.delete_confirm }}');">
+                                <button type="submit" style="padding: 6px 14px; font-size: 0.85rem; background: #ef4444; color: white; border: none; border-radius: 20px; cursor: pointer;">
+                                    🗑️ {{ t.delete }}
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-trips">
+            <div class="icon">🗺️</div>
+            <h3>{{ t.no_trips }}</h3>
+            <p>{% if request.args.get('budget') or request.args.get('destination') %}
+                {{ t.no_trips_match }}
+               {% else %}
+                {{ t.no_trips_yet }}
+               {% endif %}</p>
+            <br>
+            <a href="/home" class="btn btn-primary">✈ {{ t.generate_first }}</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</body>
+
+</html>
